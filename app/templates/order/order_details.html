@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+<ul class="posts">
+<h3> Date: {{order.manufacturing_date  }}</h3>
+<h3> Time: {{order.manufacturing_time  }}</h3>
+
+    {% for product in order.products %}
+<li class="post">
+<p> {{ product.name }}
+        <div class="market-thumbnail">
+                <img class="img-rounded profile-thumbnail" src="{{ product.img }}">
+        </div>
+    Price : {{ product.price }}
+</p>
+</li>
+{% endfor %}
+
+<p> Total price : {{ order.price }}</p>
+</ul>

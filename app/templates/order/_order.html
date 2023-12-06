@@ -1,0 +1,15 @@
+<ul class="posts">
+    {% for order in orders %}
+
+    <li class="post">
+  <a class="btn btn-default" href="{{ url_for('order_details',order = order)}}">#}
+        <div class="post-thumbnail">
+                <img class="img-rounded profile-thumbnail" src="{{ current_user.gravatar(size=40) }}">
+        </div>
+     <div class="post-content">
+            <div class="post-date">{{ moment(order.manufacturing_date).fromNow() }}</div>
+     </div>
+  </a>
+    </li>
+    {% endfor %}
+</ul>

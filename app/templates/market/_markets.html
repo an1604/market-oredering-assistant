@@ -1,0 +1,13 @@
+<ul class="posts">
+    {% for market in markets %}
+        <li class="post">
+            <div class="post-thumbnail">
+                {{ market.name }}
+
+                <a href="{{ market.home_page }}">
+                    <img class="img-rounded profile-thumbnail" src="{{ market.thumbnail }}"/>
+                </a>
+            </div>
+        </li>
+    {% endfor %}
+</ul>
