@@ -6,7 +6,8 @@ from app import db
 
 
 def safe_url(target):
-    return target.startswith('/') or target.startswith('http://')
+    return target.startswith('/') or target.startswith('http://') or target.startswith('https://')
+
 
 
 def send_email_to_confirm_user(user, token):

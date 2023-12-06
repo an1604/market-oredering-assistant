@@ -11,6 +11,7 @@ from sqlalchemy.exc import IntegrityError
 from ..helper_functions import (safe_url, send_email_to_confirm_user, send_email_to_reset_password,
                                 send_email_to_change_email)
 from ..Models.models import User
+import pdb
 
 
 @auth.before_app_request
@@ -43,11 +44,10 @@ def login():
             flash('Logged in successfully.')
             next = request.args.get('next')
 
-            if next is not None and not safe_url(next):
-                return abort(400)
+            if next is None or not safe_url(next):
+                next = url_for('main.index')
 
-            return flask_redirect(url_for('main.user', username=user.username))
-            # return render_template('user.html', user=user)
+            return flask_redirect(next)
         flash('Invalid username or password.')
     return render_template('auth/login.html', form=form)
 
@@ -75,9 +75,11 @@ def register():
             return flask_redirect(url_for('auth.register'))
         user = User(username=username, email=email, city=city, address=address,
                     password=password, location=location)
+        db.session.add(user)
+        db.session.commit()
         token = user.generate_confirmation_token()
         send_email_to_confirm_user(user=user, token=token)
-        return flask_redirect(url_for('main.index'))
+        return flask_redirect(url_for('auth.login'))
     return render_template('auth/register.html', form=form)
 
 
