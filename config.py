@@ -41,6 +41,7 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     FLASK_CONFIG = 'testing'
     TESTING = True
+    WTF_CSRF_ENABLED = False
     SQLALCHEMY_DATABASE_URI = os.environ['MySQL_connection_TEST']
     engine = create_engine(SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
 

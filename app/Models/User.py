@@ -1,7 +1,9 @@
+import pdb
+
 from .. import db, login_manager
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from itsdangerous import BadSignature,BadData
+from itsdangerous import BadSignature, BadData
 from flask import current_app
 from datetime import datetime
 import hashlib
@@ -170,7 +172,7 @@ class User(UserMixin, db.Model):
             'followed_posts_url': url_for('api.get_user_posts', id=self.id),
             'post_count': self.posts.count(),
             'order_count': self.orders.count(),
-            'market_count': self.markets.coint()
+            'market_count': self.markets.count()
         }
         return json_user
 
@@ -245,6 +247,7 @@ class User(UserMixin, db.Model):
             'new_email': new_email
         }).decode('utf-8')
 
+
     def change_email(self, token):
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
@@ -254,9 +257,12 @@ class User(UserMixin, db.Model):
         if data.get('change_email') != self.id:
             return False
         new_email = data.get('new_email')
-        if new_email is None:
+
+        if self.query.filter_by(email=new_email).first() is not None:
             return False
+
         self.email = new_email
+        self.avatar_hash = self.gravatar_hash()
         db.session.add(self)
         return True
 
