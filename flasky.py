@@ -18,11 +18,40 @@ def make_shell_context():
     return dict(db=db, User=User, Role=Role)
 
 
-# coverage metrics
 import os
 import sys
 import click
 
+
+# running the application under the request profiler to detect running issues
+@app.cli.command()
+@click.option('--length', default=25,
+              help='Number of functions to include in the profiler report.')
+@click.option('--profile-dir', default=None,
+              help='Directory where profiler data files are saved.')
+def profile(length, profile_dir):
+    """Start the application under the code profiler."""
+    from werkzeug.contrib.profiler import ProfilerMiddleware
+    app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[length],
+                                      profile_dir=profile_dir)
+    app.run(debug=False)
+
+
+from flask_migrate import upgrade
+
+
+@app.cli.command
+def deploy():
+    """Run deployment tasks."""
+    # migrate database to latest revision
+    upgrade()
+    # create or update user roles
+    Role.insert_roles()
+    # ensure all users are following themselves
+    User.add_self_follows()
+
+
+# coverage metrics
 COV = None
 if os.environ.get('FLASK_COVERAGE'):
     import coverage
@@ -36,7 +65,7 @@ if os.environ.get('FLASK_COVERAGE'):
               help='Run tests under code coverage.')
 def test(coverage):
     """Run the unit tests.
-    From the cmd :
+    From the cmd:
     (flasky) $ flask test
     """
     if coverage and not os.environ.get('FLASK_COVERAGE'):

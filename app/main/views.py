@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import render_template, url_for, request, abort, flash, make_response
+from flask import render_template, url_for, request, abort, flash, make_response, current_app
 from flask import redirect as flask_redirect
 from . import main
 from .. import db
@@ -7,7 +7,7 @@ from ..helper_functions import get_showing_followed_posts_query
 from .forms import PostForm, InitializeMarketProfileForm, AddMarketAsAdminForm
 from flask_login import login_required, logout_user, current_user, login_user
 from ..Models.models import Permission, Post, User, Market, Comment, Order
-from .forms import EditProfileForm, EditProfileAdminForm
+from .forms import EditProfileForm, EditProfileAdminForm, CommentForm
 from ..helper_functions import (update_form_by_user_data, update_user_by_form_data,
                                 update_user_market_details)
 from ..api.decorators import permission_required, admin_required
@@ -284,3 +284,16 @@ def edit(id):
 
 
 """End Posts routs --------------------------------------------------------------"""
+
+
+@main.route('/shutdown')
+def server_shutdown():
+    if not current_app.testing:
+        abort(404)
+    shutdown = request.environ.get('werkzeug.server.shutdown')
+    if not shutdown:
+        abort(500)
+    shutdown()
+    return 'Shutting down...'
+
+

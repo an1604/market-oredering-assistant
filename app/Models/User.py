@@ -247,7 +247,6 @@ class User(UserMixin, db.Model):
             'new_email': new_email
         }).decode('utf-8')
 
-
     def change_email(self, token):
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
@@ -265,6 +264,20 @@ class User(UserMixin, db.Model):
         self.avatar_hash = self.gravatar_hash()
         db.session.add(self)
         return True
+
+    def generate_auth_token(self, expiration):
+        s = Serializer(current_app.config['SECRET_KEY'],
+                       expires_in=expiration)
+        return s.dumps({'id': self.id}).decode('utf-8')
+
+    @staticmethod
+    def verify_auth_token(email_or_token):
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return None
+        return User.query.get(data['id'])
 
     """End Confirmation---------------------------------"""
 
