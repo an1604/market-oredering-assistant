@@ -79,8 +79,8 @@ def get_showing_followed_posts_query():
 
 import numpy as np
 import pickle
-from tensorflow.keras.models import model_from_json
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import model_from_json
 import re
 
 
