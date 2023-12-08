@@ -32,12 +32,12 @@ class RegisterForm(FlaskForm):
     submit = SubmitField('Register')
 
     @staticmethod
-    def validate_email(form,field):
+    def validate_email(form, field):
         if User.query.filter_by(email=field.data).first():
             raise ValidationError('Email already registered!')
 
     @staticmethod
-    def validate_username(form,field):
+    def validate_username(form, field):
         if User.query.filter_by(username=field.data).first():
             raise ValidationError('Username already in use.')
 
@@ -140,3 +140,13 @@ class ChangeEmailForm(FlaskForm):
     def validate_email(self, field):
         if User.query.filter_by(email=field.data.lower()).first():
             raise ValidationError('Email already registered.')
+
+
+class PredictionMLForm(FlaskForm):
+    Years_of_experience = StringField('Years Experience', validators=[DataRequired()])
+    submit = SubmitField('Predict Salary')
+
+
+class PredictionDLForm(FlaskForm):
+    review = StringField('Review', validators=[DataRequired()])
+    submit = SubmitField('Predict')

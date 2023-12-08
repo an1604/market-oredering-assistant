@@ -26,6 +26,9 @@ class Config:
     FLASKY_COMMENTS_PER_PAGE = 30
     FLASKY_SLOW_DB_QUERY_TIME = 0.5
 
+    # ML\DL Deployment
+    TF_CPP_MIN_LOG_LEVEL = os.environ['TF_CPP_MIN_LOG_LEVEL']
+
     @staticmethod
     def init_app(app):
         pass

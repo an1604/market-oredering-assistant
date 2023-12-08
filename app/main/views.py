@@ -1,4 +1,3 @@
-from datetime import datetime
 from flask import render_template, url_for, request, abort, flash, make_response, current_app
 from flask import redirect as flask_redirect
 from . import main
@@ -297,3 +296,32 @@ def server_shutdown():
     return 'Shutting down...'
 
 
+@main.route('/predict_lr', methods=['GET', 'POST'])
+def predict_lr():
+    import joblib
+    from .forms import PredictionMLForm
+    import numpy as np
+
+    form = PredictionMLForm()
+    if form.validate_on_submit():
+        years_exp = float(form.Years_of_experience.data)
+        years_exp = np.array([years_exp]).reshape(-1, 1)
+        model_file_path = r"C:\Users\adina\PycharmProjects\pythonProject1\ML-deployment\linear_regression_model.pkl"
+        model = open(model_file_path, 'rb')
+        lr_model = joblib.load(model)
+        model_prediction = lr_model.predict_lr()
+        model_prediction = round(float(model_prediction), 2)
+        flash('Model prediction is: {}'.format(model_prediction))
+    return render_template('predict.html', form=form)
+
+
+@main.route('/predict_review', methods=['GET', 'POST'])
+def predict_review():
+    from .forms import PredictionDLForm
+    from ..helper_functions import sentiment_prediction
+    form = PredictionDLForm()
+    if form.validate_on_submit():
+        review = form.review.data
+        prediction = sentiment_prediction(review)
+        flash('Model prediction: {} '.format(prediction))
+    return render_template('predict.html', form=form)
