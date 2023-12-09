@@ -16,8 +16,9 @@ from .Post import Post
 from .Role import Role
 from .Follow import Follow
 from .Permission import Permission
+from .UserChats import UserChats
 from flask_login import UserMixin, AnonymousUserMixin
-
+from .Chat import Chat
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -67,9 +68,17 @@ class User(UserMixin, db.Model):
                                 lazy='dynamic',
                                 cascade='all, delete-orphan')
 
+    chats = db.relationship('Chat',
+                            secondary=UserChats.__tablename__,
+                            backref=db.backref('users', lazy='joined'),
+                            lazy='dynamic',
+                            cascade='all, delete-orphan',
+                            single_parent=True)
+
     comments = db.relationship('Comment',
                                backref='author',
                                lazy='dynamic')
+
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)

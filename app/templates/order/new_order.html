@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+{% block title %}Flasky New Order {% endblock %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+
+{% block title %}Flasky New Order- {{ user.username }}{% endblock %}
+
+{% block page_content %}
+<div class="container">
+    <div class="msg-header">
+        <div class="profile-thumbnail">
+            <img src="{{current_user.avatar}}"/>
+        </div>
+        <div class="last-seen">
+            <h4> {{current_user.username}}</h4>
+            <h6>{{current_user.last_seen}} </h6>
+        </div>
+        <div class="chat-page">
+            <div class="msg-inbox">
+                <div class="chats">
+                    <div class="msg-page">
+                        <div class="received-chats">
+                            <div class="received-msg">
+                                <div class="received-msg-inbox">
+                                    <p> Bot message</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="outgoing-chats">
+                            <div class="outgoing-chat-msg">
+                                <p> My message</p>
+                            </div>
+                        </div>
+                        <div class="msg-bottom">
+                            <div class="input-group">
+                                {{ wtf.quick_form(form) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

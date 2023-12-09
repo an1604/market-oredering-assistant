@@ -55,6 +55,9 @@
                 Your Posts
             </a>
         {% endif %}
+            <a class="btn btn-default" href="{{ url_for('main.new_order') }}">
+                Create a new order
+            </a>
     <br> <br>
 
         {% if current_user.can(Permission.FOLLOW) and user != current_user %}

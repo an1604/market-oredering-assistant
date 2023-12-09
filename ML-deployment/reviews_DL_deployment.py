@@ -45,7 +45,7 @@ test = ['Meal was pathetic']
 test = tokenizer.texts_to_sequences(test)
 test = pad_sequences(test, maxlen=X.shape[1], dtype='int32', value=0)
 
-liked = model.predict_lr()[0]
+liked = model.predict(test)[0]
 if np.argmax(liked) == 0:
     print('Negative')
 elif np.argmax(liked) == 1:

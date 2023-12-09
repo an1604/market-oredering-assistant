@@ -150,3 +150,7 @@ class PredictionMLForm(FlaskForm):
 class PredictionDLForm(FlaskForm):
     review = StringField('Review', validators=[DataRequired()])
     submit = SubmitField('Predict')
+
+class MessageForm(FlaskForm):
+    message = StringField('Message', validators=[DataRequired()])
+    submit = SubmitField('Send')

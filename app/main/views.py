@@ -5,8 +5,8 @@ from .. import db
 from ..helper_functions import get_showing_followed_posts_query
 from .forms import PostForm, InitializeMarketProfileForm, AddMarketAsAdminForm
 from flask_login import login_required, logout_user, current_user, login_user
-from ..Models.models import Permission, Post, User, Market, Comment, Order
-from .forms import EditProfileForm, EditProfileAdminForm, CommentForm
+from ..Models.models import Permission, Post, User, Market, Comment, Order,Message,Chat
+from .forms import EditProfileForm, EditProfileAdminForm, CommentForm, MessageForm
 from ..helper_functions import (update_form_by_user_data, update_user_by_form_data,
                                 update_user_market_details)
 from ..api.decorators import permission_required, admin_required
@@ -64,9 +64,7 @@ def edit_profile():
         db.session.commit()
         flash('Your profile has been updated.')
         return flask_redirect(url_for('main.user', username=current_user.username))
-    form.name.data = current_user.name
     form.location.data = current_user.location
-    form.about_me.data = current_user.about_me
     return render_template('user/edit_profile.html', form=form)
 
 
@@ -325,3 +323,16 @@ def predict_review():
         prediction = sentiment_prediction(review)
         flash('Model prediction: {} '.format(prediction))
     return render_template('predict.html', form=form)
+
+@main.route('/new_order',methods=['GET','POST'])
+@login_required
+def new_order():
+    form = MessageForm()
+    chat = Chat()
+    if form.validate_on_submit():
+        message_body = form.message.data
+        message = Message(body = message_body)
+        chat.messages.append(message)
+        return flask_redirect(url_for('main.new_order',form=form ))
+
+    return render_template('order/new_order.html', form=form)
