@@ -1,6 +1,9 @@
 from .. import db
 from ..exceptions import ValidationError
 from datetime import datetime
+import bleach
+from markdown import markdown
+
 
 class Comment(db.Model):
     __tablename__ = 'comments'

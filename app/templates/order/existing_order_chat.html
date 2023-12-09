@@ -7,12 +7,14 @@
 {% block page_content %}
 <div class="container">
     <div class="msg-header">
-        <div class="profile-thumbnail">
-            <img src="{{current_user.avatar}}"/>
-        </div>
         <div class="last-seen">
             <h4> {{current_user.username}}</h4>
             <h6>{{current_user.last_seen}} </h6>
+            <div class="profile-picture">
+                <div class="profile-thumbnail">
+                    <img src="{{current_user.gravatar(size=40)}}"/>
+                </div>
+            </div>
         </div>
         <div class="chat-page">
             <div class="msg-inbox">
@@ -21,14 +23,14 @@
                         <div class="received-chats">
                             <div class="received-msg">
                                 <div class="received-msg-inbox">
-                                    <p> Bot message</p>
+                                    <p> איך אפשר לעזור?</p>
                                 </div>
                             </div>
                         </div>
                         {%for message in messages%}
                         <div class="outgoing-chats">
                             <div class="outgoing-chat-msg">
-                                <p> message</p>
+                                <p> {{message.body}}</p>
                             </div>
                         </div>
                         {%endfor%}

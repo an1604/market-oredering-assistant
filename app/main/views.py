@@ -5,7 +5,7 @@ from .. import db
 from ..helper_functions import get_showing_followed_posts_query
 from .forms import PostForm, InitializeMarketProfileForm, AddMarketAsAdminForm
 from flask_login import login_required, logout_user, current_user, login_user
-from ..Models.models import Permission, Post, User, Market, Comment, Order,Message,Chat
+from ..Models.models import Permission, Post, User, Market, Comment, Order, Message, Chat
 from .forms import EditProfileForm, EditProfileAdminForm, CommentForm, MessageForm
 from ..helper_functions import (update_form_by_user_data, update_user_by_form_data,
                                 update_user_market_details)
@@ -324,15 +324,34 @@ def predict_review():
         flash('Model prediction: {} '.format(prediction))
     return render_template('predict.html', form=form)
 
-@main.route('/new_order',methods=['GET','POST'])
+
+@main.route('/new_order', methods=['GET', 'POST'])
 @login_required
 def new_order():
     form = MessageForm()
-    chat = Chat()
+    chat = Chat(user_id=current_user.id)
     if form.validate_on_submit():
         message_body = form.message.data
-        message = Message(body = message_body)
+        message = Message(body=message_body)
         chat.messages.append(message)
-        return flask_redirect(url_for('main.new_order',form=form ))
-
+        db.session.add(chat)
+        db.session.commit()
+        return flask_redirect(url_for('main.existing_order_chat', id=chat.id))
     return render_template('order/new_order.html', form=form)
+
+
+@main.route('/existing_order_chat/<int:id>', methods=['GET', 'POST'])
+@login_required
+def existing_order_chat(id):
+    chat = Chat.query.filter_by(id=id).first()
+    form = MessageForm()
+    if form.validate_on_submit() and chat:
+        message_body = form.message.data
+        message = Message(body=message_body)
+        chat.messages.append(message)
+        db.session.add(chat)
+        db.session.commit()
+        return flask_redirect(url_for('main.existing_order_chat', id=chat.id))
+    return render_template('order/existing_order_chat.html', id=chat.id,
+                           form=form,
+                           messages=chat.messages)

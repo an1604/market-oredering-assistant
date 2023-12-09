@@ -1,6 +1,9 @@
 from .. import db
 from ..exceptions import ValidationError
-from datetime import datetime
+import bleach
+from markdown import markdown
+
+
 class Message(db.Model):
     __tablename__ = 'messages'
     id = db.Column(db.Integer, primary_key=True)
@@ -32,5 +35,6 @@ class Message(db.Model):
         target.body_html = bleach.linkify(bleach.clean(
             markdown(value, output_format='html'),
             tags=allowed_tags, strip=True))
+
 
 db.event.listen(Message.body, 'set', Message.on_changed_body)

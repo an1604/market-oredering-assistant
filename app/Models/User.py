@@ -20,6 +20,7 @@ from .UserChats import UserChats
 from flask_login import UserMixin, AnonymousUserMixin
 from .Chat import Chat
 
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -78,7 +79,6 @@ class User(UserMixin, db.Model):
     comments = db.relationship('Comment',
                                backref='author',
                                lazy='dynamic')
-
 
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
