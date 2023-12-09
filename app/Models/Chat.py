@@ -25,6 +25,6 @@ class Chat(db.Model):
     def to_json(self):
         json_chat = {
             'user_id': self.user_id,
-            'messages': self.messages
+            'messages': [message.to_jason() for message in self.messages]
         }
         return json_chat

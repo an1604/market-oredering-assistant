@@ -334,7 +334,8 @@ def new_order():
         message_body = form.message.data
         message = Message(body=message_body)
         chat.messages.append(message)
-        db.session.add(chat)
+        current_user.chats.append(chat)
+        db.session.add(message, chat)
         db.session.commit()
         return flask_redirect(url_for('main.existing_order_chat', id=chat.id))
     return render_template('order/new_order.html', form=form)
@@ -349,7 +350,7 @@ def existing_order_chat(id):
         message_body = form.message.data
         message = Message(body=message_body)
         chat.messages.append(message)
-        db.session.add(chat)
+        db.session.add(message, chat)
         db.session.commit()
         return flask_redirect(url_for('main.existing_order_chat', id=chat.id))
     return render_template('order/existing_order_chat.html', id=chat.id,

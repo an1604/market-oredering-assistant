@@ -19,6 +19,33 @@ def get_user_posts(id):
     })
 
 
+# Return all orders from existing user
+@api.route('/users/<int:id>/orders/', methods=['GET'])
+def get_user_orders(id):
+    user = User.query.get_or_404(id)
+    return jsonify({'user': user.id,
+                    'orders': [order.to_json() for order in user.orders]
+                    })
+
+
+# Return all markets from existing user
+@api.route('/users/<int:id>/markets/', methods=['GET'])
+def get_user_markets(id):
+    user = User.query.get_or_404(id)
+    return jsonify({'user': user.id,
+                    'markets': [market.to_json() for market in user.markets]
+                    })
+
+
+@api.route('/users/<int:id>/chats/', methods=['GET'])
+def get_user_chats(id):
+    user = User.query.get_or_404(id)
+    return jsonify({
+        'user': user.id,
+        'chats': [chat.to_json() for chat in user.chats]
+    })
+
+
 # Return all the blog posts followed by a user.
 @api.route('/users/<int:id>/timeline/')
 def get_posts_by_followed(id):
