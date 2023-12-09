@@ -11,4 +11,7 @@ from .UserMarkets import UserMarkets
 from .Role import Role
 from .ProductsOrder import ProductsOrders
 from .Order import Order
-
+from .Message import Message
+from .ChatMessages import ChatMessages
+from .UserChats import UserChats
+from .Chat import Chat

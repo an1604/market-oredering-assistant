@@ -1,13 +1,12 @@
-from datetime import datetime
-from flask import render_template, url_for, request, abort, flash, make_response
+from flask import render_template, url_for, request, abort, flash, make_response, current_app
 from flask import redirect as flask_redirect
 from . import main
 from .. import db
 from ..helper_functions import get_showing_followed_posts_query
 from .forms import PostForm, InitializeMarketProfileForm, AddMarketAsAdminForm
 from flask_login import login_required, logout_user, current_user, login_user
-from ..Models.models import Permission, Post, User, Market, Comment, Order
-from .forms import EditProfileForm, EditProfileAdminForm
+from ..Models.models import Permission, Post, User, Market, Comment, Order, Message, Chat
+from .forms import EditProfileForm, EditProfileAdminForm, CommentForm, MessageForm
 from ..helper_functions import (update_form_by_user_data, update_user_by_form_data,
                                 update_user_market_details)
 from ..api.decorators import permission_required, admin_required
@@ -65,9 +64,7 @@ def edit_profile():
         db.session.commit()
         flash('Your profile has been updated.')
         return flask_redirect(url_for('main.user', username=current_user.username))
-    form.name.data = current_user.name
     form.location.data = current_user.location
-    form.about_me.data = current_user.about_me
     return render_template('user/edit_profile.html', form=form)
 
 
@@ -284,3 +281,77 @@ def edit(id):
 
 
 """End Posts routs --------------------------------------------------------------"""
+
+
+@main.route('/shutdown')
+def server_shutdown():
+    if not current_app.testing:
+        abort(404)
+    shutdown = request.environ.get('werkzeug.server.shutdown')
+    if not shutdown:
+        abort(500)
+    shutdown()
+    return 'Shutting down...'
+
+
+@main.route('/predict_lr', methods=['GET', 'POST'])
+def predict_lr():
+    import joblib
+    from .forms import PredictionMLForm
+    import numpy as np
+
+    form = PredictionMLForm()
+    if form.validate_on_submit():
+        years_exp = float(form.Years_of_experience.data)
+        years_exp = np.array([years_exp]).reshape(-1, 1)
+        model_file_path = r"C:\Users\adina\PycharmProjects\pythonProject1\ML-deployment\linear_regression_model.pkl"
+        model = open(model_file_path, 'rb')
+        lr_model = joblib.load(model)
+        model_prediction = lr_model.predict_lr()
+        model_prediction = round(float(model_prediction), 2)
+        flash('Model prediction is: {}'.format(model_prediction))
+    return render_template('predict.html', form=form)
+
+
+@main.route('/predict_review', methods=['GET', 'POST'])
+def predict_review():
+    from .forms import PredictionDLForm
+    from ..helper_functions import sentiment_prediction
+    form = PredictionDLForm()
+    if form.validate_on_submit():
+        review = form.review.data
+        prediction = sentiment_prediction(review)
+        flash('Model prediction: {} '.format(prediction))
+    return render_template('predict.html', form=form)
+
+
+@main.route('/new_order', methods=['GET', 'POST'])
+@login_required
+def new_order():
+    form = MessageForm()
+    chat = Chat(user_id=current_user.id)
+    if form.validate_on_submit():
+        message_body = form.message.data
+        message = Message(body=message_body)
+        chat.messages.append(message)
+        db.session.add(chat)
+        db.session.commit()
+        return flask_redirect(url_for('main.existing_order_chat', id=chat.id))
+    return render_template('order/new_order.html', form=form)
+
+
+@main.route('/existing_order_chat/<int:id>', methods=['GET', 'POST'])
+@login_required
+def existing_order_chat(id):
+    chat = Chat.query.filter_by(id=id).first()
+    form = MessageForm()
+    if form.validate_on_submit() and chat:
+        message_body = form.message.data
+        message = Message(body=message_body)
+        chat.messages.append(message)
+        db.session.add(chat)
+        db.session.commit()
+        return flask_redirect(url_for('main.existing_order_chat', id=chat.id))
+    return render_template('order/existing_order_chat.html', id=chat.id,
+                           form=form,
+                           messages=chat.messages)

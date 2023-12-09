@@ -20,11 +20,14 @@ class Config:
     FLASKY_ADMIN = os.environ.get('FLASKY_ADMIN')
     SSL_REDIRECT = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_RECORD_QUERIES = True
+    SQLALCHEMY_RECORD_QUERIES = True  # enable the slow query reporting on production
     FLASKY_POSTS_PER_PAGE = 20
     FLASKY_FOLLOWERS_PER_PAGE = 50
     FLASKY_COMMENTS_PER_PAGE = 30
     FLASKY_SLOW_DB_QUERY_TIME = 0.5
+
+    # ML\DL Deployment
+    TF_CPP_MIN_LOG_LEVEL = os.environ['TF_CPP_MIN_LOG_LEVEL']
 
     @staticmethod
     def init_app(app):
@@ -50,6 +53,28 @@ class ProductionConfig(Config):
     FLASK_CONFIG = 'production'
     SQLALCHEMY_DATABASE_URI = os.environ['MySQL_connection_PRODUCTION']
     engine = create_engine(SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
+
+    @classmethod
+    def init_app(cls, app):
+        Config.init_app(app)
+        # email errors to the administrators
+        import logging
+        from logging.handlers import SMTPHandler
+        credentials = None
+        secure = None
+        if getattr(cls, 'MAIL_USERNAME', None) is not None:
+            credentials = (cls.MAIL_USERNAME, cls.MAIL_PASSWORD)
+            if getattr(cls, 'MAIL_USE_TLS', None):
+                secure = ()
+        mail_handler = SMTPHandler(
+            mailhost=(cls.MAIL_SERVER, cls.MAIL_PORT),
+            fromaddr=cls.FLASKY_MAIL_SENDER,
+            toaddrs=[cls.FLASKY_ADMIN],
+            subject=cls.FLASKY_MAIL_SUBJECT_PREFIX + ' Application Error',
+            credentials=credentials,
+            secure=secure)
+        mail_handler.setLevel(logging.ERROR)
+        app.logger.addHandler(mail_handler)
 
 
 config = {

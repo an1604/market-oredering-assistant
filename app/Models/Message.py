@@ -1,21 +1,14 @@
 from .. import db
 from ..exceptions import ValidationError
-from datetime import datetime
 import bleach
 from markdown import markdown
 
 
-class Comment(db.Model):
-    __tablename__ = 'comments'
+class Message(db.Model):
+    __tablename__ = 'messages'
     id = db.Column(db.Integer, primary_key=True)
     body = db.Column(db.Text)
     body_html = db.Column(db.Text)
-    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    disabled = db.Column(db.Boolean)
-    author_id = db.Column(db.Integer, db.ForeignKey('users.id'),
-                          unique=False)
-    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'),
-                        unique=False)
 
     @staticmethod
     def from_jason(json_comment):
@@ -44,4 +37,4 @@ class Comment(db.Model):
             tags=allowed_tags, strip=True))
 
 
-db.event.listen(Comment.body, 'set', Comment.on_changed_body)
+db.event.listen(Message.body, 'set', Message.on_changed_body)

@@ -1,6 +1,8 @@
+import pdb
+
 from . import api
 from ..Models.models import Post, Permission
-from flask import g, jsonify, request, current_app,url_for
+from flask import g, jsonify, request, current_app, url_for
 from .. import db
 from .decorators import permission_required, admin_required
 from .comments import get_next_prev_from_pagination
@@ -8,7 +10,7 @@ from .comments import get_next_prev_from_pagination
 
 # Create a new blog post.
 @api.route('/posts/', methods=['POST'])
-@permission_required(Permission.WRITE)
+# @permission_required(Permission.WRITE)
 def new_post():
     post = Post.from_json(request.json)
     post.author = g.current_user
@@ -45,9 +47,11 @@ def get_post(id):
 # Modify a blog post.
 @api.route('/posts/<int:id>', methods=['PUT'])
 @permission_required(Permission.WRITE)
-@admin_required
 def edit_post(id):
     post = Post.query.get_or_404(id)
+    if g.current_user != post.author and \
+            not g.current_user.can(Permission.ADMIN):
+        return forbidden('Insufficient permissions')
     post.body = request.json.get('body', post.body)
     db.session.add(post)
     db.session.commit()
