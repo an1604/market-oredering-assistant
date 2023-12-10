@@ -4,7 +4,7 @@ from . import main
 from .. import db
 from ..helper_functions import get_showing_followed_posts_query
 from .forms import PostForm, InitializeMarketProfileForm, AddMarketAsAdminForm
-from flask_login import login_required, logout_user, current_user, login_user
+from flask_login import login_required, current_user
 from ..Models.models import Permission, Post, User, Market, Comment, Order, Message, Chat
 from .forms import EditProfileForm, EditProfileAdminForm, CommentForm, MessageForm
 from ..helper_functions import (update_form_by_user_data, update_user_by_form_data,
@@ -218,6 +218,8 @@ def add_market():
 
 
 """End Market routes --------------------------------------------------"""
+
+
 """Orders routes--------------------------------------------------------------"""
 
 
@@ -225,6 +227,38 @@ def add_market():
 @login_required
 def order_details(order):
     return render_template('order/order_details.html', order=order)
+
+@main.route('/new_order', methods=['GET', 'POST'])
+@login_required
+def new_order():
+    form = MessageForm()
+    chat = Chat(user_id=current_user.id)
+    if form.validate_on_submit():
+        message_body = form.message.data
+        message = Message(body=message_body)
+        chat.messages.append(message)
+        current_user.chats.append(chat)
+        db.session.add(message, chat)
+        db.session.commit()
+        return flask_redirect(url_for('main.existing_order_chat', id=chat.id))
+    return render_template('order/new_order.html', form=form)
+
+
+@main.route('/existing_order_chat/<int:id>', methods=['GET', 'POST'])
+@login_required
+def existing_order_chat(id):
+    chat = Chat.query.filter_by(id=id).first()
+    form = MessageForm()
+    if form.validate_on_submit() and chat:
+        message_body = form.message.data
+        message = Message(body=message_body)
+        chat.messages.append(message)
+        db.session.add(message, chat)
+        db.session.commit()
+        return flask_redirect(url_for('main.existing_order_chat', id=chat.id))
+    return render_template('order/existing_order_chat.html', id=chat.id,
+                           form=form,
+                           messages=chat.messages)
 
 
 """End Orders routes--------------------------------------------------------------"""
@@ -307,7 +341,7 @@ def predict_lr():
         model_file_path = r"C:\Users\adina\PycharmProjects\pythonProject1\ML-deployment\linear_regression_model.pkl"
         model = open(model_file_path, 'rb')
         lr_model = joblib.load(model)
-        model_prediction = lr_model.predict_lr()
+        model_prediction = lr_model.predict(years_exp)
         model_prediction = round(float(model_prediction), 2)
         flash('Model prediction is: {}'.format(model_prediction))
     return render_template('predict.html', form=form)
@@ -316,7 +350,7 @@ def predict_lr():
 @main.route('/predict_review', methods=['GET', 'POST'])
 def predict_review():
     from .forms import PredictionDLForm
-    from ..helper_functions import sentiment_prediction
+    from DL_MODEL.DL_Model import sentiment_prediction
     form = PredictionDLForm()
     if form.validate_on_submit():
         review = form.review.data
@@ -325,34 +359,3 @@ def predict_review():
     return render_template('predict.html', form=form)
 
 
-@main.route('/new_order', methods=['GET', 'POST'])
-@login_required
-def new_order():
-    form = MessageForm()
-    chat = Chat(user_id=current_user.id)
-    if form.validate_on_submit():
-        message_body = form.message.data
-        message = Message(body=message_body)
-        chat.messages.append(message)
-        current_user.chats.append(chat)
-        db.session.add(message, chat)
-        db.session.commit()
-        return flask_redirect(url_for('main.existing_order_chat', id=chat.id))
-    return render_template('order/new_order.html', form=form)
-
-
-@main.route('/existing_order_chat/<int:id>', methods=['GET', 'POST'])
-@login_required
-def existing_order_chat(id):
-    chat = Chat.query.filter_by(id=id).first()
-    form = MessageForm()
-    if form.validate_on_submit() and chat:
-        message_body = form.message.data
-        message = Message(body=message_body)
-        chat.messages.append(message)
-        db.session.add(message, chat)
-        db.session.commit()
-        return flask_redirect(url_for('main.existing_order_chat', id=chat.id))
-    return render_template('order/existing_order_chat.html', id=chat.id,
-                           form=form,
-                           messages=chat.messages)
