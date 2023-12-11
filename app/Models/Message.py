@@ -2,6 +2,7 @@ from .. import db
 from ..exceptions import ValidationError
 import bleach
 from markdown import markdown
+from flask import url_for
 
 
 class Message(db.Model):
@@ -19,12 +20,9 @@ class Message(db.Model):
 
     def to_jason(self):
         json_comment = {
-            'url': url_for('api.get_comment', id=self.id),
+            'url': url_for('api.get_message', id=self.id),
             'body': self.body,
             'body_html': self.body_html,
-            'timestamp': self.timestamp,
-            'author_url': url_for('api.get_user', id=self.author_id),
-            'post_url': url_for('api.get_post', id=self.post_id)
         }
         return json_comment
 
