@@ -8,6 +8,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+from sklearn.model_selection import train_test_split
 
 
 class Vocabulary(object):
@@ -21,6 +23,8 @@ class Vocabulary(object):
             idx: token
             for idx, token in token_to_idx.items()
         }
+        self.stemmer = PorterStemmer()
+        self.lemmatizer = WordNetLemmatizer()
 
     def to_serializable(self):
         """ returns a dictionary that can be serialized """
@@ -32,6 +36,8 @@ class Vocabulary(object):
         return cls(**contents)
 
     def add_token(self, token):
+        token = self.stemmer.stem(token.lower())  # stemming
+        token = self.lemmatizer.lemmatize(token)  # lemmatization
         if token in self.token_to_idx:
             index = self.token_to_idx[token]
         else:
@@ -95,7 +101,7 @@ class Vectorizer(object):
 
     def vectorize(self, query, vector_length=-1):
         indices = [self.category_vocab.begin_seq_index]
-        indices.extend(self.category_vocab.lookup_token(token)
+        indices.extend(self.category_vocab.lookup_token(str(token))
                        for token in query.split(' '))
         indices.append(self.category_vocab.end_seq_index)
 
@@ -110,11 +116,11 @@ class Vectorizer(object):
     @classmethod
     def from_dataframe(cls, df, cutoff=25):
         category_vocab = Vocabulary()
-        for token in sorted(set(df['category'])):
+        for token in sorted(set(df['text'])):
             category_vocab.add_token(token)
 
         word_counter = Counter()
-        for query in df['query']:
+        for query in df['text']:
             for token in query.split(' '):
                 if token not in string.punctuation:
                     word_counter[token] += 1
@@ -127,11 +133,11 @@ class Vectorizer(object):
         return cls(category_vocab, query_vocab)
 
 
-class ProductsCategoryClassifier(nn.Module):
+class QueryCategoryClassifier(nn.Module):
     def __init__(self, embedding_size, num_embeddings, num_channels,
                  hidden_dim, num_classes, dropout_p,
                  pretrained_embeddings=None, padding_idx=0):
-        super(ProductsCategoryClassifier, self).__init__()
+        super(QueryCategoryClassifier, self).__init__()
         if pretrained_embeddings is None:
             self.emb = nn.Embedding(embedding_dim=embedding_size,
                                     num_embeddings=num_embeddings,
@@ -212,6 +218,7 @@ class TrainerClassifier(object):
                 loss = self.loss(output)
                 loss.backward()
                 self.optimizer.step()
+            print('epoch: {}, loss: {}'.format(epoch, loss))
 
     def predict(self, X: torch):
         return self.model(X)
@@ -220,3 +227,83 @@ class TrainerClassifier(object):
 def permute_data(X: np.ndarray, y: np.ndarray):
     perm = np.random.permutation(X.shape[0])
     return X[perm], y[perm]
+
+
+class QueryDataSet(Dataset):
+    def __init__(self, df, vectorizer):
+        self.vectorizer = vectorizer
+        self.df = df
+
+        measure_len = lambda contex: len(contex.split(' '))
+        self._max_seq_length = max(map(measure_len, df.label)) + 2
+        self.X = df.iloc[:, :-1].values
+        self.y = df.iloc[:, -1]
+        self.train_df, self.val_df, self.test_df = train_test_split(self.X, self.y, test_size=0.3,
+                                                                    random_state=42)
+        self.train_size = len(self.train_df)
+        self.validation_size = len(self.val_df)
+        self.test_size = len(self.test_df)
+
+        self._lookup_dict = {'train': (self.train_df, self.train_size),
+                             'val': (self.val_df, self.validation_size),
+                             'test': (self.test_df, self.test_size)}
+
+        class_counts = df.label.value_counts().to_dict()
+
+        def sort_key(item):
+            return self.vectorizer.category_vocab.lookup_token(item[0])
+
+        sorted_counts = sorted(class_counts.items(), key=sort_key)
+        frequencies = [count for _, count in sorted_counts]
+        self.class_weights = 1.0 / torch.tensor(frequencies, dtype=torch.float32)
+
+    @classmethod
+    def load_dataset_and_make_vectorizer(cls, csv_file):
+        df = pd.read_csv(csv_file)
+        return cls(df, Vectorizer.from_dataframe(df))
+
+    def get_vectorizer(self):
+        return self.vectorizer
+
+    def __len__(self):
+        return self._target_size
+
+    def get_num_batches(self, batch_size):
+        return len(self) // batch_size
+
+
+def generate_batches(dataset, batch_size, shuffle=True,
+                     drop_last=True):
+    dataloader = DataLoader(dataset=dataset, batch_size=batch_size,
+                            shuffle=shuffle, drop_last=drop_last)
+
+    for data_dict in dataloader:
+        yield data_dict
+
+
+if __name__ == "__main__":
+    hidden_dim = 100
+    num_channels = 100
+    learning_rate = 0.001
+    dropout_p = 0.1
+    batch_size = 128
+    num_epochs = 100
+    embedding_size = 100
+    hidden_dim = 10
+
+    file_path = 'C:\\Users\\adina\\PycharmProjects\\pythonProject1\\ML-deployment\\data\\buy_remove_finish_data.csv'
+    dataset = QueryDataSet.load_dataset_and_make_vectorizer(file_path)
+    vectorizer = dataset.get_vectorizer()
+    classifier = QueryCategoryClassifier(embedding_size=embedding_size,
+                                         num_embeddings=len(vectorizer.category_vocab),
+                                         num_channels=num_channels,
+                                         hidden_dim=hidden_dim,
+                                         num_classes=len(vectorizer.category_vocab),
+                                         dropout_p=dropout_p,
+                                         padding_idx=0)
+    loss = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(classifier.parameters(), lr=learning_rate)
+    trainer = TrainerClassifier(classifier, optimizer, loss)
+    trainer.fit(X_train=dataset.X,
+                y_train=dataset.y,
+                batch_size=batch_size)
